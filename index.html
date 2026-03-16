@@ -254,6 +254,23 @@
       font-size: 0.82rem;
       color: var(--text-secondary);
     }
+
+    /* ── Typewriter cursor ─────────────────────────────────────── */
+    .tw-cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--text-secondary);
+      margin-left: 2px;
+      vertical-align: text-bottom;
+      border-radius: 1px;
+      animation: cursorBlink 0.85s step-end infinite;
+    }
+
+    @keyframes cursorBlink {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0; }
+    }
   </style>
 </head>
 <body>
@@ -263,7 +280,9 @@
     <div class="profile">
       <div class="avatar" id="profileAvatar"></div>
       <h1 class="profile-name" id="profileName"></h1>
-      <p class="profile-tagline" id="profileTagline"></p>
+      <p class="profile-tagline">
+        <span id="typewriterText"></span><span class="tw-cursor"></span>
+      </p>
 
       <!-- Search -->
       <div class="search-wrapper">
@@ -316,9 +335,52 @@
       }
 
       document.getElementById("profileName").textContent = name;
-      document.getElementById("profileTagline").textContent = tagline;
       document.title = name;
       document.getElementById("footerText").textContent = `© ${new Date().getFullYear()} ${name}`;
+    })();
+
+    // ── Typewriter ──────────────────────────────────────────────────────
+    (function initTypewriter() {
+      const { tagline, taglines } = siteConfig.profile;
+      const phrases = taglines && taglines.length ? taglines : [tagline || ""];
+      const el = document.getElementById("typewriterText");
+
+      const TYPING_MS  = 75;   // 每個字的打字速度
+      const DELETE_MS  = 35;   // 刪字速度
+      const PAUSE_END  = 2200; // 打完後停頓
+      const PAUSE_DEL  = 450;  // 刪完後停頓
+
+      let idx        = 0;
+      let charIdx    = 0;
+      let isDeleting = false;
+
+      function tick() {
+        const phrase = phrases[idx];
+
+        if (!isDeleting) {
+          charIdx++;
+          el.textContent = phrase.slice(0, charIdx);
+          if (charIdx === phrase.length) {
+            if (phrases.length === 1) return; // 只有一句，不循環
+            isDeleting = true;
+            setTimeout(tick, PAUSE_END);
+          } else {
+            setTimeout(tick, TYPING_MS);
+          }
+        } else {
+          charIdx--;
+          el.textContent = phrase.slice(0, charIdx);
+          if (charIdx === 0) {
+            isDeleting = false;
+            idx = (idx + 1) % phrases.length;
+            setTimeout(tick, PAUSE_DEL);
+          } else {
+            setTimeout(tick, DELETE_MS);
+          }
+        }
+      }
+
+      setTimeout(tick, 700); // 頁面載入後稍微延遲再開始
     })();
 
     // ── Init Category Pills ────────────────────────────────────────────
